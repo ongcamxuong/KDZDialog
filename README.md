@@ -10,8 +10,8 @@ Feature
 - set Title, Message for dialog.
 - The UI are like iOS dialog
 
-![](https://github.com/ongcamxuong/KDZDialog/tree/master/screenshot/screenshot_0001.png "screenshot 1")
-![](https://github.com/ongcamxuong/KDZDialog/tree/master/screenshot/screenshot_0002.png "screenshot 2")
+![alt text](/screenshot/screenshot_0001.png)
+![alt text](/screenshot/screenshot_0002.png)
 
 How to use
 -----
