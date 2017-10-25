@@ -22,11 +22,6 @@ public class MainActivity extends AppCompatActivity {
         btnShowDialog = (Button) findViewById(R.id.showDialog);
         final KDZDialog dialogBuilder = KDZDialog.getInstance(this);
 
-
-//        int temp = Integer.valueOf("asdfasdf");
-
-        asdfasdf
-
         dialogBuilder
                 .withTitle("Modal Dialog")
                 .withMessage("This action cannot undo, are you sure?")
