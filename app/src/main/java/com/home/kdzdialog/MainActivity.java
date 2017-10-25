@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
         final KDZDialog dialogBuilder = KDZDialog.getInstance(this);
 
 
-        int temp = Integer.valueOf("asdfasdf");
+//        int temp = Integer.valueOf("asdfasdf");
 
         dialogBuilder
                 .withTitle("Modal Dialog")
