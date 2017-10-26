@@ -1,72 +1,15 @@
 machine:
-  environment:
-    GRADLE_OPTS: '-Xmx200m -XX:MaxPermSize=512m" -Dorg.gradle.jvmargs="-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError"'
-  node:
-    version: 6
-dependencies:
-  pre:
-    # Start the gradle daemon
-    - ./gradlew:
-        background: true
-    - echo y | android update sdk --no-ui --all --filter tools
-    - echo y | android update sdk --no-ui --all --filter platform-tools
-    - echo y | android update sdk --no-ui --all --filter extra-android-m2repository
-    - echo y | android update sdk --no-ui --all --filter extra-android-support
-    - echo y | android update sdk --no-ui --all --filter extra-google-google_play_services
-    - echo y | android update sdk --no-ui --all --filter extra-google-m2repository
-    - echo y | android update sdk --no-ui --all --filter android-23
-    - echo y | android update sdk --no-ui --all --filter android-21
-    - echo y | android update sdk --no-ui --all --filter build-tools-25.0.2
-    - ./gradlew dependencies --console=plain
-    # Install deps for jtime-website
-    - (cd JTime-rest/client/jtime-website && yarn install)
-    # Install deps for jtime-rest
-    - (cd JTime-rest && yarn install)
-  cache_directories:
-    - ~/.cache/yarn
+  java:
+    version: oraclejdk8
 
-test:
+ dependencies:
   override:
-    # JTime-website tests
-    - >
-       cd JTime-rest/client/jtime-website &&
-       yarn run lint && yarn test && yarn run build
-    # JTime-rest tests (using loopback memory db)
-    - >
-       cd JTime-rest &&
-       jq '.postgres = {name: "postgres", connector: "memory"}' server/datasources.json > /tmp/temp.json &&
-       mv /tmp/temp.json server/datasources.json &&
-       yarn test &&
-       yarn run lint
-    - ./gradlew assembleDebug --console=plain
-    # Atm dokka crashes the build. I think this is a bug in dokka,
-    # so until this is fixed, dokka won't be run.
-    # - ./gradlew dokka --console=plain
-    # Robolectric and materialdrawer don't work perfectly together
-    # This is a hack to get the unittests to run.
-    - sed -i '6 i <item name="selectableItemBackground">@color/colorPrimaryLight</item>' JTime-android/src/main/res/values/styles.xml && ./gradlew test --console=plain; sed -i '6 d' JTime-android/src/main/res/values/styles.xml
-    # Build the release apk if we have the secure keys required, reporting the status codes
-    # correctly
-    - >
-       (cd JTime-android && gpg -d -o android.jks --passphrase $ANDROID_RELEASE_ENCRYPTION_PASSWORD android.jks.gpg);
-       if test $? == 0; then (./gradlew assembleRelease --console=plain && rm JTime-android/android.jks);
-       else true; fi
+    - chmod +x gradlew
+    - ./gradlew dependencies
+ test:
+  override:
+    - chmod +x grailsw
+    - ./grailsw test-app --non-interactive
   post:
-    - cp -r JTime-android/build/outputs $CIRCLE_ARTIFACTS
-    # copy the test results to the test results directory.
-    - find JTime-android/build/test-results -name "*.xml" -exec cp {} $CIRCLE_TEST_REPORTS/ \;
-deployment:
-    production:
-        branch: production
-        commands:
-            - >
-               if [[ $(git diff HEAD^..HEAD JTime-rest) ]];
-               then (sudo apt-get install -y fabric && fab -H "$PRODUCTION_HOST" -u "$PRODUCTION_USER" deploy | sed -n -e 's/^\(\[[a-zA-Z0-9.]\+]\)\?//p' | sed '$ d');
-               else echo "No changes to JTime-rest folder, so not redeploying rest api"; fi
-            - >
-               if [[ $(git diff HEAD^..HEAD JTime-android) ]];
-               then ( (cd JTime-android &&
-               gpg -d -o google-play-publisher-keys.json --passphrase "$GOOGLE_PLAY_JSON_PUBLISHER_ENCRYPTION_PASSWORD" google-play-publisher-keys.json.gpg &&
-               gpg -d -o android.jks --passphrase "$ANDROID_RELEASE_ENCRYPTION_PASSWORD" android.jks.gpg) &&
-               (./gradlew publishRelease --console=plain; rm JTime-android/google-play-publisher-keys.json JTime-android/android.jks; cp -r JTime-android/build/outputs $CIRCLE_ARTIFACTS;) );
-               else echo "No changes to JTime-android folder, so not uploading apk to play store"; fi
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+    - find . -type f -regex ".*/target/test-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
