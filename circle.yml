@@ -1,23 +1,29 @@
-general:
-    artifacts:
-        - /home/ubuntu/KDZDialog/app/build/outputs/apk/
-
 machine:
-    java:
-        version: oraclejdk8
-    environment:
-        ANDROID_HOME: /usr/local/android-sdk-linux
+  pre:
+    - env
+    - pwd
+    - ls
 
+checkout:
+  post:
+    - echo CheckoutPost
+    - git submodule sync
+    - git submodule update --init
 
 dependencies:
-    pre:
-        - echo y | android update sdk --no-ui --all --filter tools,platform-tools,extra-google-m2repository,extra-google-google_play_services,extra-android-support,extra-android-m2repository,android-24
-        - echo y | android update sdk --no-ui --all --filter build-tools-24.0.1
-    cache_directories:
-        - /usr/local/android-sdk-linux/tools
-        - /usr/local/android-sdk-linux/build-tools/24.0.1
+  pre:
+    - echo y | android update sdk --no-ui --all --filter "tools,build-tools-25.0.2,platform-tools,android-25,extra-android-m2repository"
+    - mkdir -p $ANDROID_HOME/licenses
+    - echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ${ANDROID_HOME}/licenses/android-sdk-license
+
+  override:
+      - ./gradlew dependencies || true
 
 test:
-    override:
-        - ./gradlew assemble
-- cp -r app/build/outputs $CIRCLE_ARTIFACTS
+  override:
+    - ./gradlew test
+
+compile:
+  override:
+    - ./gradlew assembleDebug
+    - cp -r app/build/outputs $CIRCLE_ARTIFACTS
