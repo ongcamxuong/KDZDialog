@@ -28,3 +28,6 @@ compile:
   override:
     - ./gradlew assembleDebug
     - cp -r app/build/outputs $CIRCLE_ARTIFACTS
+    
+post:
+    - cp -r app/build/outputs $CIRCLE_ARTIFACTS
